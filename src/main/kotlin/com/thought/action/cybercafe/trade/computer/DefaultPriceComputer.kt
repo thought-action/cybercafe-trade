@@ -44,7 +44,12 @@ class DefaultPriceComputer(
         }
 
         val timeTotalAmount =
-            compute(startDateTime, endDateTime, defaultTimeRangeComputer, discountPriceComputersAndNightPriceComputer)
+            compute(
+                startDateTime,
+                realEndDateTime,
+                defaultTimeRangeComputer,
+                discountPriceComputersAndNightPriceComputer
+            )
         amounts.add(timeTotalAmount)
         logger.info("total use minutes = {}, amount = {}", minutes, timeTotalAmount)
 
