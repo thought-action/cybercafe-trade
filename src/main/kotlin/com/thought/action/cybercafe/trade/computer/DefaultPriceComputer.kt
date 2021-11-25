@@ -2,7 +2,6 @@ package com.thought.action.cybercafe.trade.computer
 
 import com.thought.action.cybercafe.trade.DefaultPriceDefine
 import com.thought.action.cybercafe.trade.DiscountPriceDefine
-import com.thought.action.cybercafe.trade.PriceComputer
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -44,25 +43,10 @@ class DefaultPriceComputer(
             logger.info("power on price = {}", defaultPriceDefine.powerOnPrice)
         }
 
-        var rangeTime = startDateTime
-        var defaultStarTime = rangeTime
-        while (rangeTime < realEndDateTime) {
-            for (discountPriceComputer in discountPriceComputersAndNightPriceComputer) {
-                val (isContain, priceStartDateTime, priceEndDateTime) = discountPriceComputer.range(
-                    rangeTime,
-                    realEndDateTime
-                )
-                if (isContain) {
-                    amounts.add(defaultTimeRangeComputer.compute(defaultStarTime, rangeTime))
-                    amounts.add(discountPriceComputer.compute(priceStartDateTime, priceEndDateTime))
-                    defaultStarTime = priceEndDateTime
-                    rangeTime = priceEndDateTime
-                    break
-                }
-            }
-            rangeTime = rangeTime.plusMinutes(1)
-        }
-        amounts.add(defaultTimeRangeComputer.compute(defaultStarTime, rangeTime))
+        val timeTotalAmount =
+            compute(startDateTime, endDateTime, defaultTimeRangeComputer, discountPriceComputersAndNightPriceComputer)
+        amounts.add(timeTotalAmount)
+        logger.info("total use minutes = {}, amount = {}", minutes, timeTotalAmount)
 
         val totalAmount = amounts.reduce { totalAmount: BigDecimal, amount: BigDecimal -> totalAmount.add(amount) }
             .setScale(0, RoundingMode.UP)
@@ -77,7 +61,6 @@ class DefaultPriceComputer(
             }
         }
 
-        logger.info("total use minutes = {}, amount = {}", minutes, totalAmount)
 
         return totalAmount
     }

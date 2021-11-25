@@ -1,7 +1,6 @@
 package com.thought.action.cybercafe.trade.computer
 
 import com.thought.action.cybercafe.trade.DefaultPriceDefine
-import com.thought.action.cybercafe.trade.PriceComputer
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.RoundingMode

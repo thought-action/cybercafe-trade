@@ -1,6 +1,5 @@
 package com.thought.action.cybercafe.trade.computer
 
-import com.thought.action.cybercafe.trade.PriceComputer
 import java.time.LocalDateTime
 
 interface TimeRangePriceComputer : PriceComputer {

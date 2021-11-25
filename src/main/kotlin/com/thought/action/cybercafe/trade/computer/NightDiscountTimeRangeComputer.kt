@@ -2,9 +2,7 @@ package com.thought.action.cybercafe.trade.computer
 
 import com.thought.action.cybercafe.trade.DefaultPriceDefine
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -59,39 +57,23 @@ class NightDiscountTimeRangeComputer(
         if (startDateTime >= endDateTime) {
             return BigDecimal.ZERO
         }
-        val amounts = mutableListOf<BigDecimal>(BigDecimal.ZERO)
-        var rangeTime = startDateTime
-        var defaultStarTime = rangeTime
-        while (rangeTime < endDateTime) {
-            for (discountPriceComputer in discountTimePriceComputers) {
-                val (isContain, priceStartDateTime, priceEndDateTime) = discountPriceComputer.range(
-                    rangeTime,
-                    endDateTime
-                )
-                if (isContain) {
-                    amounts.add(defaultTimeRangeComputer.compute(defaultStarTime, rangeTime))
-                    amounts.add(discountPriceComputer.compute(priceStartDateTime, priceEndDateTime))
-                    defaultStarTime = priceEndDateTime
-                    rangeTime = priceEndDateTime
-                }
-            }
-            rangeTime = rangeTime.plusMinutes(1)
-        }
+
+        val totalAmount = compute(startDateTime, endDateTime, defaultTimeRangeComputer, discountTimePriceComputers)
 
         val minutes = Duration.between(startDateTime, endDateTime).toMinutes()
-        val totalAmount = amounts.reduce { totalAmount: BigDecimal, amount: BigDecimal -> totalAmount.add(amount) }
         if (totalAmount > defaultPriceDefine.nightPrice) {
             logger.info(
-                "StartDateTime={} to EndDateTime={} use night discount time range price, minutes={}, amount={}",
+                "StartDateTime={} to EndDateTime={} use night discount time range price, minutes={}, total amount={}，night amount = {} ",
                 startDateTime,
                 endDateTime,
                 minutes,
+                totalAmount,
                 defaultPriceDefine.nightPrice
             )
             return defaultPriceDefine.nightPrice
         }
         logger.info(
-            "StartDateTime={} to EndDateTime={} use night discount time range price, minutes={}, amount={}",
+            "StartDateTime={} to EndDateTime={} use night discount time range price, minutes={}, total amount={}",
             startDateTime,
             endDateTime,
             minutes,
