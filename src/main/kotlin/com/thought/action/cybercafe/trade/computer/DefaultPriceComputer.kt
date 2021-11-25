@@ -17,7 +17,7 @@ class DefaultPriceComputer(
 
     override fun compute(startDateTime: LocalDateTime, endDateTime: LocalDateTime): BigDecimal {
         val minutes = Duration.between(startDateTime, endDateTime).toMinutes()
-        val realEndDateTime = endDateTime.plusMinutes(59 - minutes % 60) //按小时计费，不满一小时按一小时计算，实际结束时间
+        val realEndDateTime = endDateTime.plusMinutes(60 - minutes % 60) //按小时计费，不满一小时按一小时计算，实际结束时间
         if (minutes % 60 > 0) {
             logger.info(
                 "StarDateTime={} to EndDateTime={} contain insufficient part, real duration is {} hour",
