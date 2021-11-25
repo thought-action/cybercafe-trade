@@ -20,6 +20,7 @@ interface PriceComputer {
                     rangeTime,
                     endDateTime
                 )
+                isContain.and(isContain)
                 if (isContain) {
                     amounts.add(defaultTimePriceComputer.compute(defaultStarTime, rangeTime))
                     amounts.add(discountPriceComputer.compute(priceStartDateTime, priceEndDateTime))
@@ -29,9 +30,7 @@ interface PriceComputer {
             }
             rangeTime = rangeTime.plusMinutes(1)
         }
-        if (defaultStarTime == startDateTime) {
-            amounts.add(defaultTimePriceComputer.compute(defaultStarTime, rangeTime))
-        }
+        amounts.add(defaultTimePriceComputer.compute(defaultStarTime, rangeTime.minusMinutes(1)))
         return amounts.reduce { totalAmount: BigDecimal, amount: BigDecimal -> totalAmount.add(amount) }
     }
 }
