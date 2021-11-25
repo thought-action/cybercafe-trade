@@ -4,8 +4,6 @@ import com.thought.action.cybercafe.trade.DefaultPriceDefine
 import com.thought.action.cybercafe.trade.DiscountPriceDefine
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-
-import org.junit.jupiter.api.Assertions.*
 import java.math.BigDecimal
 import java.time.DayOfWeek
 import java.time.LocalDateTime
@@ -31,7 +29,7 @@ internal class DefaultPriceComputerTest {
         val defaultPriceComputer = DefaultPriceComputer(defaultPrice, listOf(firstDiscountPriceDefine))
 
         val startDateTime = LocalDateTime.of(2021, 12, 12, 10, 1)
-        val endDateTime = LocalDateTime.of(2021, 12, 13, 9, 20)
+        val endDateTime = LocalDateTime.of(2021, 12, 12, 10, 20)
 
         Assertions.assertEquals(BigDecimal.ZERO, defaultPriceComputer.compute(startDateTime, endDateTime))
     }

@@ -51,7 +51,7 @@ class DefaultPriceComputer(
                 discountPriceComputersAndNightPriceComputer
             )
         amounts.add(timeTotalAmount)
-        logger.info("total use minutes = {}, amount = {}", minutes, timeTotalAmount)
+        logger.info("total use minutes = {}, time range amount = {}", minutes, timeTotalAmount)
 
         val totalAmount = amounts.reduce { totalAmount: BigDecimal, amount: BigDecimal -> totalAmount.add(amount) }
             .setScale(0, RoundingMode.UP)
@@ -66,6 +66,7 @@ class DefaultPriceComputer(
             }
         }
 
+        logger.info("Actual payment = {}", minutes, timeTotalAmount)
 
         return totalAmount
     }
