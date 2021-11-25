@@ -29,7 +29,7 @@ interface PriceComputer {
             }
             rangeTime = rangeTime.plusMinutes(1)
         }
-        amounts.add(defaultTimePriceComputer.compute(defaultStarTime, rangeTime))
+//        amounts.add(defaultTimePriceComputer.compute(defaultStarTime, rangeTime))
         return amounts.reduce { totalAmount: BigDecimal, amount: BigDecimal -> totalAmount.add(amount) }
     }
 }
