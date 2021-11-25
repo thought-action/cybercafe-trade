@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class NightDiscountTimeRangeComputer(
     private val defaultPriceDefine: DefaultPriceDefine,
@@ -13,6 +14,9 @@ class NightDiscountTimeRangeComputer(
 ) : TimeRangePriceComputer {
 
     private val logger = LoggerFactory.getLogger(this::class.java);
+    override fun startTime(): LocalTime {
+        return defaultPriceDefine.nightStartTime
+    }
 
     override fun range(
         startDatetime: LocalDateTime,
@@ -81,4 +85,5 @@ class NightDiscountTimeRangeComputer(
         )
         return totalAmount
     }
+
 }

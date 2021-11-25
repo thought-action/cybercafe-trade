@@ -6,12 +6,17 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class DiscountTimeRangePriceComputer(
     private val discountPriceDefine: DiscountPriceDefine
 ) : TimeRangePriceComputer {
 
     private val logger = LoggerFactory.getLogger(this::class.java);
+
+    override fun startTime(): LocalTime {
+        return discountPriceDefine.startTime
+    }
 
     override fun range(
         startDatetime: LocalDateTime,
@@ -68,4 +73,7 @@ class DiscountTimeRangePriceComputer(
         )
         return amount
     }
+
+
+
 }

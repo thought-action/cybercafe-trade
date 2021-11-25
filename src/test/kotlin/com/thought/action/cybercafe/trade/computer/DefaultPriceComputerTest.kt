@@ -29,7 +29,7 @@ internal class DefaultPriceComputerTest {
         val defaultPriceComputer = DefaultPriceComputer(defaultPrice, listOf(firstDiscountPriceDefine))
 
         val startDateTime = LocalDateTime.of(2021, 12, 12, 10, 1)
-        val endDateTime = LocalDateTime.of(2021, 12, 12, 13, 20)
+        val endDateTime = LocalDateTime.of(2021, 12, 13, 13, 20)
 
         Assertions.assertEquals(BigDecimal.ZERO, defaultPriceComputer.compute(startDateTime, endDateTime))
     }
