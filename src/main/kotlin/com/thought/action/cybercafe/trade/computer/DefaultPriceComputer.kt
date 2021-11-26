@@ -13,21 +13,31 @@ class DefaultPriceComputer(
     private val discountPrices: List<DiscountPriceDefine>
 ) : PriceComputer {
 
-    private val logger = LoggerFactory.getLogger(this.javaClass);
+    private val logger = LoggerFactory.getLogger(this.javaClass)
 
     override fun compute(startDateTime: LocalDateTime, endDateTime: LocalDateTime): BigDecimal {
         val minutes = Duration.between(startDateTime, endDateTime).toMinutes()
-        val realEndDateTime = endDateTime.plusMinutes(60 - minutes % 60) //按小时计费，不满一小时按一小时计算，实际结束时间
-        if (minutes % 60 > 0) {
+        val realEndDateTime = if (minutes % 60 > 0) {
+            val realEndDateTime = endDateTime.plusMinutes(60 - minutes % 60)
             logger.info(
-                "StarDateTime={} to EndDateTime={} contain insufficient part, real duration is {} hour",
+                "上机时间 {} - {} 包含不足小时部分，按 {} 分钟计算，",
                 startDateTime,
                 endDateTime,
                 Duration.between(startDateTime, realEndDateTime).toHours()
             )
+            realEndDateTime
+        } else {
+            logger.info(
+                "上机时间 {} - {} ， 总上机时常 : {} 分钟",
+                startDateTime,
+                endDateTime,
+                Duration.between(startDateTime, endDateTime).toMinutes()
+            )
+            endDateTime
         }
         val defaultTimeRangeComputer = DefaultTimeRangeComputer(defaultPriceDefine)
-        val discountTimeRangePriceComputers = discountPrices.map { DiscountTimeRangePriceComputer(it) }.toList()
+        val discountTimeRangePriceComputers =
+            discountPrices.map { DiscountTimeRangePriceComputer(defaultPriceDefine, it) }.toSet()
         val nightDiscountTimeRangeComputer =
             NightDiscountTimeRangeComputer(
                 defaultPriceDefine,
@@ -35,12 +45,12 @@ class DefaultPriceComputer(
                 discountTimeRangePriceComputers
             )
         val discountPriceComputersAndNightPriceComputer =
-            mutableListOf<TimeRangePriceComputer>(nightDiscountTimeRangeComputer)
+            mutableSetOf<TimeRangePriceComputer>(nightDiscountTimeRangeComputer)
         discountPriceComputersAndNightPriceComputer.addAll(discountTimeRangePriceComputers)
 
-        val amounts = mutableListOf<BigDecimal>(defaultPriceDefine.powerOnPrice)
+        val amounts = mutableListOf(defaultPriceDefine.powerOnPrice)
         if (defaultPriceDefine.powerOnPrice > BigDecimal.ZERO) {
-            logger.info("power on price = {}", defaultPriceDefine.powerOnPrice)
+            logger.info("开机费用 : {}", defaultPriceDefine.powerOnPrice)
         }
 
         val timeTotalAmount =
@@ -48,10 +58,11 @@ class DefaultPriceComputer(
                 startDateTime,
                 realEndDateTime,
                 defaultTimeRangeComputer,
-                discountPriceComputersAndNightPriceComputer
+                discountPriceComputersAndNightPriceComputer,
+                false
             )
         amounts.add(timeTotalAmount)
-        logger.info("total use minutes = {}, time range amount = {}", minutes, timeTotalAmount)
+        logger.info("总上机时长费用 : {}", timeTotalAmount)
 
         val totalAmount = amounts.reduce { totalAmount: BigDecimal, amount: BigDecimal -> totalAmount.add(amount) }
             .setScale(0, RoundingMode.UP)
@@ -59,14 +70,14 @@ class DefaultPriceComputer(
         if (defaultPriceDefine.useMinimumConsumption) {
             if (defaultPriceDefine.minimumConsumption > totalAmount) {
                 logger.info(
-                    "Open use minimum consumption option, current total amount {} less minimum price {}, total amount change to {}",
-                    totalAmount, defaultPriceDefine.minimumConsumption, defaultPriceDefine.minimumConsumption
+                    "开启最低消费模式，当前消费: {},  不足最低消费: {}, 按最低消费计算总价",
+                    totalAmount, defaultPriceDefine.minimumConsumption
                 )
                 return defaultPriceDefine.minimumConsumption
             }
         }
 
-        logger.info("Actual payment = {}", minutes, timeTotalAmount)
+        logger.info("总消费 = {}", timeTotalAmount)
 
         return totalAmount
     }

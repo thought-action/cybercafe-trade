@@ -2,7 +2,6 @@ package com.thought.action.cybercafe.trade.computer
 
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import java.util.*
 
 interface PriceComputer {
 
@@ -10,28 +9,38 @@ interface PriceComputer {
 
     fun compute(
         startDateTime: LocalDateTime, endDateTime: LocalDateTime, defaultTimePriceComputer: PriceComputer,
-        discountTimeRangePriceComputers: List<TimeRangePriceComputer>
+        discountTimeRangePriceComputers: Collection<TimeRangePriceComputer>,
+        overrideNight: Boolean,
     ): BigDecimal {
-        val amounts = mutableListOf<BigDecimal>(BigDecimal.ZERO)
-        var rangeTime = startDateTime
-        var defaultStarTime = rangeTime
-        while (rangeTime < endDateTime) {
-            for (discountPriceComputer in discountTimeRangePriceComputers) {
-                val (isContain, priceStartDateTime, priceEndDateTime) = discountPriceComputer.range(
-                    rangeTime,
-                    endDateTime
-                )
-                isContain.and(isContain)
-                if (isContain) {
-                    amounts.add(defaultTimePriceComputer.compute(defaultStarTime, rangeTime))
-                    amounts.add(discountPriceComputer.compute(priceStartDateTime, priceEndDateTime))
-                    defaultStarTime = priceEndDateTime
-                    rangeTime = priceEndDateTime
-                }
-            }
-            rangeTime = rangeTime.plusMinutes(1) //加一方式需优化，直接筛选最近优惠时间
+        if (endDateTime <= startDateTime) {
+            return BigDecimal.ZERO
         }
-        amounts.add(defaultTimePriceComputer.compute(defaultStarTime, rangeTime.minusMinutes(1)))
+        if (discountTimeRangePriceComputers.isEmpty()) {
+            return defaultTimePriceComputer.compute(startDateTime, endDateTime)
+        }
+        val amounts = mutableListOf<BigDecimal>(BigDecimal.ZERO)
+        var defaultTimePriceRangeStartTime = startDateTime
+        var priceStartTime = startDateTime
+        while (priceStartTime < endDateTime) {
+             discountTimeRangePriceComputers.any {
+                val (isContain, priceStartDateTime, priceEndDateTime) = it.range(
+                    priceStartTime,
+                    endDateTime,
+                    overrideNight
+                )
+                if (isContain) {
+                    if (priceStartTime > defaultTimePriceRangeStartTime.plusMinutes(1)) {
+                        amounts.add(defaultTimePriceComputer.compute(defaultTimePriceRangeStartTime, priceStartDateTime))
+                    }
+                    amounts.add(it.compute(priceStartDateTime, priceEndDateTime))
+                    priceStartTime = priceEndDateTime
+                    defaultTimePriceRangeStartTime = priceEndDateTime
+                }
+                 isContain
+            }
+            priceStartTime = priceStartTime.plusMinutes(1) //加一方式需优化，直接筛选最近优惠时间
+        }
+        amounts.add(defaultTimePriceComputer.compute(defaultTimePriceRangeStartTime, priceStartTime.minusMinutes(1)))
         return amounts.reduce { totalAmount: BigDecimal, amount: BigDecimal -> totalAmount.add(amount) }
     }
 }

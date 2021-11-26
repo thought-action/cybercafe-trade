@@ -6,32 +6,35 @@ import java.math.BigDecimal
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.math.log
 
 class NightDiscountTimeRangeComputer(
     private val defaultPriceDefine: DefaultPriceDefine,
     private val defaultTimeRangeComputer: DefaultTimeRangeComputer,
-    private val discountTimePriceComputers: List<DiscountTimeRangePriceComputer>
+    private val discountTimePriceComputers: Collection<DiscountTimeRangePriceComputer>
 ) : TimeRangePriceComputer {
 
-    private val logger = LoggerFactory.getLogger(this::class.java);
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     override fun startTime(): LocalTime {
         return defaultPriceDefine.nightStartTime
     }
 
     override fun range(
         startDatetime: LocalDateTime,
-        endDateTime: LocalDateTime
+        endDateTime: LocalDateTime,
+        overrideNight: Boolean
     ): Triple<Boolean, LocalDateTime, LocalDateTime> {
 
         if (endDateTime < startDatetime) {
             throw RuntimeException("结束时间不能再开始时间之前")
         }
 
-        val startTime = startDatetime.toLocalTime()
         val nightStartTime = defaultPriceDefine.nightStartTime
         val nightEndTime = defaultPriceDefine.nightEndTime
-        val isAcrossTheDay = nightEndTime < nightStartTime //夜间价格是否跨天
-        if (startTime >= nightStartTime) {
+        val isAcrossTheDay = nightEndTime <= nightStartTime //夜间价格是否跨天
+
+        if (startDatetime.toLocalTime() >= nightStartTime) {
             if (endDateTime.dayOfYear > startDatetime.dayOfYear) {
                 if (isAcrossTheDay) {
                     val nightEndDateTime = LocalDateTime.of(startDatetime.toLocalDate().plusDays(1), nightEndTime)
@@ -62,12 +65,15 @@ class NightDiscountTimeRangeComputer(
             return BigDecimal.ZERO
         }
 
-        val totalAmount = compute(startDateTime, endDateTime, defaultTimeRangeComputer, discountTimePriceComputers)
+        logger.info("计费区间 {} - {} 将按夜间计费模式计费", startDateTime, endDateTime)
+
+        val totalAmount =
+            compute(startDateTime, endDateTime, defaultTimeRangeComputer, discountTimePriceComputers, true)
 
         val minutes = Duration.between(startDateTime, endDateTime).toMinutes()
         if (totalAmount > defaultPriceDefine.nightPrice) {
             logger.info(
-                "StartDateTime={} to EndDateTime={} use night discount time range price, minutes={}, total amount={}，night amount = {} ",
+                "计费模式[夜间计费] {} - {} , 总时长 : {}， 总消费 : {}, 满足夜间区间套餐价 {}，该区间按套餐价格计算",
                 startDateTime,
                 endDateTime,
                 minutes,
@@ -77,13 +83,17 @@ class NightDiscountTimeRangeComputer(
             return defaultPriceDefine.nightPrice
         }
         logger.info(
-            "StartDateTime={} to EndDateTime={} use night discount time range price, minutes={}, total amount={}",
+            "计费模式[夜间计费] {} - {} , 总时常 : {}, 总消费 : {}， 不满足夜间区间套餐价 {}, 该区间按正常计费标准计费",
             startDateTime,
             endDateTime,
             minutes,
             totalAmount
         )
         return totalAmount
+    }
+
+    override fun compareTo(other: LocalTime): Int {
+        return Int.MAX_VALUE
     }
 
 }

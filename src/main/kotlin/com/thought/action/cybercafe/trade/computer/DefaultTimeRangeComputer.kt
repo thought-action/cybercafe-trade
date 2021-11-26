@@ -19,7 +19,7 @@ class DefaultTimeRangeComputer(private val defaultPriceDefine: DefaultPriceDefin
         val amount = defaultPriceDefine.unitPrice.multiply(BigDecimal.valueOf(minutes))
             .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP)
         logger.info(
-            "StartDateTime={} to EndDateTime={} use default time range price, minutes={}, amount = {}",
+            "计费模式[正常计费] {} - {}, 时常 : {}, 费用 : {}",
             startDateTime,
             endDateTime,
             minutes,
